@@ -1,0 +1,101 @@
+name: CI - Import, Transform & Validate
+
+on:
+  push:
+    branches: [ main, feature/docker-infrastructure ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Debug - list repo files (for troubleshooting)
+        run: |
+          echo '--- root files ---'
+          ls -la
+          echo '--- docker/ and sql/ ---'
+          ls -la docker || true
+          ls -la sql || true
+
+      - name: Wait for Postgres
+        run: |
+          for i in {1..30}; do
+            pg_isready -h localhost -p 5432 -U postgres && break || sleep 2
+          done
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-client python3-pip
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements.txt
+
+      - name: Import SQL backup
+        env:
+          PGPASSWORD: postgres
+        run: |
+          if [ -f docker/init/backup.sql ]; then
+            psql -h localhost -U postgres -f docker/init/backup.sql
+          elif [ -f tmp_prof_docker/tp_docker_light/init/backup.sql ]; then
+            psql -h localhost -U postgres -f tmp_prof_docker/tp_docker_light/init/backup.sql
+          else
+            echo 'backup.sql not found in expected paths' && exit 1
+          fi
+
+      - name: Apply transformations (silver -> gold)
+        env:
+          PGPASSWORD: postgres
+        run: |
+          if [ -f sql/04_transformations.sql ]; then
+            psql -h localhost -U postgres -f sql/04_transformations.sql
+          else
+            echo 'sql/04_transformations.sql not found' && exit 1
+          fi
+
+      - name: Apply security (roles & RLS)
+        env:
+          PGPASSWORD: postgres
+        run: |
+          if [ -f sql/05_security.sql ]; then
+            psql -h localhost -U postgres -f sql/05_security.sql
+          else
+            echo 'sql/05_security.sql not found' && exit 1
+          fi
+
+      - name: SQL sanity check
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -c "SELECT COUNT(*) FROM analytics_velocity.gold_daily_activity;"
+
+      - name: Run Python validation
+        env:
+          PGPASSWORD: postgres
+          PGHOST: localhost
+          PGUSER: postgres
+          PGDATABASE: postgres
+        run: |
+          python3 notebooks/validate_db.py
+
+      - name: Upload logs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-logs
+          path: logs
