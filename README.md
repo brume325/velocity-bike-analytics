@@ -1,38 +1,52 @@
-# Projet VéloCity – Architecture Médaillon & Analytics
+# Velocity Bike Analytics — Livrable TP (Médaillon & Sécurité)
 
-Ce projet met en place une plateforme analytics pour les données de location de vélos de VéloCity.
+Ce dépôt contient le livrable du TP « Cycle de vie de la donnée » pour VéloCity (locations de vélos). Il est structuré pour une correction simple et professionnelle.
 
-## Objectifs
+## Branche à corriger
 
-- Explorer et documenter les sources de données (OpenMetadata).
-- Mettre en place une architecture Médaillon dans PostgreSQL :
-  - Schéma raw
-  - Schéma silver
-  - Schéma gold (table `gold_daily_activity`).
-- Construire un dashboard marketing dans Metabase.
-- Mettre en place la sécurité (moindre privilège, Row Level Security).
-- Étendre l’environnement avec Spark + MySQL et l’ingestion d’un jeu de données CSV/JSON.
+- Utilisez la branche `livrable` (tout le TP est dedans).
 
-## Stack technique
+## Guide de correction rapide
 
-- Docker
-- OpenMetadata
-- PostgreSQL
-- Metabase
-- Spark
-- MySQL
+1) Lire le guide TP: `README_TP.md` (architecture, exécution, conformité)
+2) Consulter la synthèse: `SYNTHESE_TP_COMPLET.md` (vue globale + mapping des attentes)
+3) Vérifier les livrables: `LIVRABLES.md` (statut et liens vers artefacts)
 
-## Structure du dépôt
+## Comment tester rapidement (PostgreSQL local)
 
-- `docs/` : rapport, architecture, gestion de projet.
-- `sql/` : scripts de création/transformations (raw → silver → gold, sécurité).
-- `spark/` : notebooks et scripts Spark.
-- `data/` : fichiers CSV/JSON d’entrée.
-- `metabase/` : exports et captures du dashboard.
-- `docker/` : fichiers docker-compose / configuration.
+Pré-requis: PostgreSQL et Python installés.
 
-## Organisation (rôles simulés)
+Exécution automatisée via PowerShell (Windows):
 
-- Data Engineer Infra : environnement Docker, bases, outils.
-- Data Engineer Modélisation : schémas raw/silver/gold, SQL, qualité.
-- Data Analyst : dashboard Metabase, KPIs, rapport fonctionnel.
+```
+cd "C:\Users\gui\Desktop\data\Nouveau dossier\velocity-bike-analytics"
+.\n+scripts\run_full_pipeline.ps1
+```
+
+Ce script exécute: import (raw) -> transformations (`sql/04_transformations.sql`) -> sécurité (`sql/05_security.sql`) -> validation (`notebooks/validate_db.py`). Les logs sont dans `logs/`.
+
+## Structure du dépôt (niveau racine)
+
+- `docs/` — guides et documentation (inclut `PARTIE3_METABASE_DASHBOARD.md`)
+- `sql/` — transformations Médaillon (raw -> silver -> gold) et sécurité RLS
+- `scripts/` — automatisation (import, pipeline complet)
+- `notebooks/` — validation Python (SQLAlchemy/pandas)
+- `archi/`, `gestion_projet/`, `data/`, `metabase/`, `spark/` — ressources du TP
+- Fichiers clés: `README_TP.md`, `LIVRABLES.md`, `SYNTHESE_TP_COMPLET.md`, `requirements.txt`
+
+## Couverture des attentes du projet
+
+- Découverte des sources: `docs/part1_sources.md` (sélection + justification)
+- Architecture Médaillon: `sql/04_transformations.sql` (raw -> silver -> gold)
+- Visualisation Metabase: `docs/PARTIE3_METABASE_DASHBOARD.md` (procédure détaillée)
+- Sécurité: `sql/05_security.sql` (RBAC + Row Level Security)
+- Automatisation & validation: `scripts/run_full_pipeline.ps1`, `notebooks/validate_db.py`
+
+## Notes d’exploitation
+
+- Si Metabase via Docker n’est pas disponible, utilisez la procédure manuelle de `docs/PARTIE3_METABASE_DASHBOARD.md` pour configurer la source PostgreSQL locale.
+- Les politiques RLS sont activées sur la table `analytics_velocity.gold_daily_activity` (restriction sur la ville Lyon pour `manager_lyon`).
+
+## À propos
+
+Projet pédagogique EPSI — Velocity Bike Analytics. Auteur: gui. Branche de travail: `livrable`.
