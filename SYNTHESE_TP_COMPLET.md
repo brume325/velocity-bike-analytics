@@ -8,6 +8,7 @@ Ce projet implémente un pipeline complet de données suivant le pattern medalli
 
 **Branche GitHub** : feature/docker-infrastructure  
 **Propriétaire** : brume325  
+**Auteurs** : Guillaume CANCLAUX, Vadim SALUZZI  
 **Date** : 3 décembre 2025
 
 ---
